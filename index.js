@@ -1,12 +1,21 @@
+require('dotenv').config()
 const express = require('express');
 const { StreamChat } = require('stream-chat');
 const cors = require('cors');
 const app = express();
+const nodemailer = require("nodemailer");
 // no cors needed for this example
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
+const transporter = nodemailer.createTransport({
+  service: "Gmail", // hoặc dịch vụ email khác
+  auth: {
+    user: process.env.NAMEMAIL, // email của bạn
+    pass: process.env.PASSMAIL, // mật khẩu email của bạn
+  },
+});
 
 app.use(cors());
 
@@ -26,6 +35,27 @@ app.get('/generate-token', (req, res) => {
   }
   const token = serverSideClient.createToken(userId);
   res.send({ token });
+});
+
+app.post("/sendMail", async (req, res) => {
+  const { to, subject, text } = req.body;
+
+  const mailOptions = {
+    from: process.env.NAMEMAIL,
+    to,
+    subject,
+    text,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('success');
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Error sending email:", error);
+    console.error("Error account email:", process.env.NAMEMAIL);
+    return res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 app.listen(port, () => {
