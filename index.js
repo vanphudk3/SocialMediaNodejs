@@ -44,7 +44,7 @@ app.post("/sendMail", async (req, res) => {
     from: process.env.NAMEMAIL,
     to,
     subject,
-    text,
+    html: text,
   };
 
   try {
@@ -57,6 +57,31 @@ app.post("/sendMail", async (req, res) => {
     return res.status(500).json({ success: false, error: error.message });
   }
 });
+
+app.post("/sendMails", async (req, res) => {
+  const { recipients, subject, text } = req.body;
+
+  if (!Array.isArray(recipients) || recipients.length === 0) {
+    return res.status(400).json({ success: false, error: "Invalid recipients list" });
+  }
+
+  const mailOptions = {
+    from: process.env.NAMEMAIL,
+    to: recipients.join(", "), // Join all recipients with a comma
+    subject,
+    html: text,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log("Email sent successfully to multiple recipients");
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Error sending email:", error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
